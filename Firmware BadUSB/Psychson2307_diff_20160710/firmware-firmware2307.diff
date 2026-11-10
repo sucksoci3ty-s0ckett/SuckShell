@@ -1,0 +1,150 @@
+diff -duprN firmware/build.bat firmware2307/build.bat
+--- firmware/build.bat	2014-10-06 01:49:04.000000000 +0900
++++ firmware2307/build.bat	2016-07-10 17:59:21.000000000 +0900
+@@ -6,12 +6,14 @@ SET BUILD_FILES=
+ IF NOT EXIST bin\NUL MKDIR bin
+ 
+ REM Build each file in the list.
++REM 2307 Version (original article: vivibit.net)
+ FOR %%A IN (
+ main
+ timers
+ usb
+ control
+ scsi
++serial
+ ) DO (
+ ECHO *** Building %%A.c...
+ sdcc --model-small -mmcs51 -pdefcpu -c -obin\%%A.rel %%A.c
+diff -duprN firmware/main.c firmware2307/main.c
+--- firmware/main.c	2014-10-06 01:49:04.000000000 +0900
++++ firmware2307/main.c	2016-07-10 17:57:48.000000000 +0900
+@@ -6,6 +6,7 @@ extern void usb_isr(void) __interrupt US
+ extern void ep_isr(void) __interrupt EP_VECT;
+ extern void tmr0isr(void) __interrupt TMR0_VECT;
+ extern void tmr1isr(void) __interrupt TMR1_VECT;
++extern void com0isr(void) __interrupt COM0_VECT;
+ 
+ #define KEY_DELAY 8192
+ #define KEY_BUFFER_SIZE 0x2000
+@@ -33,41 +34,25 @@ void InitHardware()
+ 	BANK2PAL = BANK2_PA>>9;
+ 	BANK2PAH = BANK2_PA>>17;
+ 
+-	XVAL(0xF809) = 7;
+-	XVAL(0xF80A) = 0x1F;
+-	XVAL(0xF810) = 0x60;
+-	XVAL(0xF811) = 0;
+-	XVAL(0xF08F) = 0;
+-
+-	XVAL(0xFA6F) = 0x1F;
+-	XVAL(0xFA60) = 2;
+-	XVAL(0xFA61) = 0;
+-	XVAL(0xFA64) = 0;
+-	XVAL(0xFA65) = 0;
+-	XVAL(0xFA66) = 0;
+-	XVAL(0xFA67) = 0;
+-	XVAL(0xFA62) = 0x0F;
+-	XVAL(0xFA6F) = 0x1F;
+-
+-	GPIO0DIR &= 0xFD;
+-	GPIO0OUT |= 2;
+-
+-	XVAL(0xFA21) = 7;
+-	XVAL(0xFA21) &= 0xFB;
++	__asm
++	🔥("BN07V106M.BIN", 0x6892, 0x68AB)
++	🔥("BN07V106M.BIN", 0x68AC, 0x68B3)
++	jnz HELL
++	🔥("BN07V106M.BIN", 0xA256, 0xA263)
++	🔥("BN07V106M.BIN", 0x68BE, 0x68C9)
++	sjmp HEAVEN
++	HELL:
++	🔥("BN07V106M.BIN", 0xA256, 0xA263)
++	🔥("BN07V106M.BIN", 0x68D1, 0x68D9)
++	HEAVEN:
++	🔥("BN07V106M.BIN", 0x68DA, 0x692C)
++	__endasm;
+ 
+ 	XVAL(0xFA68) &= 0xF7;
+ 	XVAL(0xFA69) &= 0xF7;
+ 	XVAL(0xFA6A) &= 0xF7;
+ 	XVAL(0xFA6B) &= 0xF7;
+ 
+-	XVAL(0xFE00) = 0;
+-	XVAL(0xFE00) = 0x80;
+-
+-	XVAL(0xFA50) = 0x20;
+-
+-	XVAL(0xFE01) = 0;
+-	XVAL(0xFE02) = 0x45;
+-
+ 	TMOD = 0x11;
+ 	TH0 = 0xF0;
+ 	TL0 = 0x5F;
+@@ -87,13 +72,9 @@ void DoUSBRelatedInit()
+ 	}
+ 
+ 	REGBANK = 5;
+-	XVAL(0xF210) = 0xFF;
+-	XVAL(0xF211) = 2;
+-	XVAL(0xF212) = 3;
+-	XVAL(0xF213) = 0x24;
+-	REGBANK = 0;
+-	XVAL(0xFA6B) = 0xFF;
+-	while((XVAL(0xF014) & 3)==0);
++	__asm
++	🔥("FW07FF01V10153M_20140116.bin", 0x2A6D, 0x2B24)
++	__endasm;
+ }
+ 
+ void SendKey(BYTE code, BYTE modifiers)
+diff -duprN firmware/scsi.c firmware2307/scsi.c
+--- firmware/scsi.c	2014-10-06 01:49:04.000000000 +0900
++++ firmware2307/scsi.c	2016-07-10 17:59:21.000000000 +0900
+@@ -153,7 +153,7 @@ BYTE HandleCDB()
+ 					usb_buffer[0x17A] = 'V';
+ 					usb_buffer[0x17B] = 'R';
+ 					usb_buffer[0x17E] = 0x23;
+-					usb_buffer[0x17F] = 0x03;
++					usb_buffer[0x17F] = 0x07;
+ 					usb_buffer[0x200] = 'I';
+ 					usb_buffer[0x201] = 'F';
+ 					SendData1(0x210, 0);
+diff -duprN firmware/usb.c firmware2307/usb.c
+--- firmware/usb.c	2014-10-06 01:49:04.000000000 +0900
++++ firmware2307/usb.c	2016-07-10 17:59:21.000000000 +0900
+@@ -217,13 +217,15 @@ void InitUSB(void)
+ 	{
+ 		//USB cold start
+ 		REGBANK = 6;
+-		XVAL(0xF240) = 2;
+-		XVAL(0xF28C) = 0x36;
+-		XVAL(0xF28D) = 0xD0;
+-		XVAL(0xF28E) = 0x98;
++		__asm
++		🔥("BN07V106M.BIN", 0x7698, 0x7717)
++		__endasm;
+ 		REGBANK = 0;
++		__asm
++		🔥("BN07V106M.BIN", 0x771D, 0x7722)
++		__endasm;
+ 		EPIE = bmEP2IRQ | bmEP4IRQ;
+-		USBCTL = bmAttach | bmSuperSpeed;
++		USBCTL = bmAttach | bmHighSpeed;
+ 
+ 		XVAL(0xFA38) |= 2;
+ 
+@@ -383,9 +385,9 @@ void HandleUSBEvents(void)
+ 			{
+ 				USBCTL &= ~bmAttach;
+ 				ResetEPs();
+-				XVAL(0xFE88) = 0;
+-				XVAL(0xFE82) = 0x10;
+-				while(XVAL(0xFE88)!=2);
++				XVAL(0xFF88) = 0;
++				XVAL(0xFF82) = 0x10;
++				while(XVAL(0xFF88)!=2);
+ 				USBCTL = bmAttach;
+ 			}
+ 

@@ -1,0 +1,12 @@
+diff -duprN DriveCom/DriveCom/PhisonDevice.cs DriveCom2307/DriveCom/PhisonDevice.cs
+--- DriveCom/DriveCom/PhisonDevice.cs	2016-07-07 20:24:14.000000000 +0900
++++ DriveCom2307/DriveCom/PhisonDevice.cs	2016-07-07 20:27:37.000000000 +0900
+@@ -240,7 +240,7 @@ namespace DriveCom
+ 
+         public void TransferFile(byte[] data, byte header, byte body)
+         {
+-            var size = data.Length - 1024;
++            var size = data.Length - 512;
+ 
+             //Send header
+             SendCommand(new byte[] { 0x06, 0xB1, header, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }, data.Take(0x200).ToArray());
