@@ -118,7 +118,7 @@ C:\BadUSB\
 
 `EmbedPayload.exe` berfungsi untuk menyuntikkan file payload biner ke dalam firmware dasar.
 
-1. Buka folder proyek `EmbedPayload` di Visual Studio.
+1. Buka file proyek `EmbedPayload.sln` atau `EmbedPayload.csproj` di dalam folder `EmbedPayload` menggunakan **Visual Studio**.
 
 2. Ubah konfigurasi ke mode **Release**.
 
