@@ -37,7 +37,7 @@ Dokumen ini disusun dengan merujuk pada tiga sumber utama berikut:
 | :--- | :--- | :--- |
 | 1 | [🛠️ Prasyarat & Lingkungan Pengembangan](#prasyarat) | Perangkat lunak, compiler, dan struktur folder kerja |
 | 2 | [📂 Bagian 1: Persiapan & Kompilasi Alat Kerja](#bagian-1) | Build `DriveCom.exe` dan `EmbedPayload.exe` |
-| 3 | [💾 Bagian 2: Backup Firmware Asli (Dumping)](#bagian-2) | Boot Mode & dumping firmware asli |
+| 3 | [💾 Bagian 2: Backup Firmware Asli (Dumping)](#bagian-2) | Modifikasi burner, Boot Mode & dumping firmware asli |
 | 4 | [⚡ Bagian 3: Kompilasi & Flashing Kustom Firmware](#bagian-3) | Patch seri 07, injeksi payload, pembakaran firmware |
 | 5 | [🩺 Bagian 4: Pengujian Hasil Perangkat](#bagian-4) | Indikator keberhasilan mutasi perangkat |
 
@@ -146,7 +146,35 @@ Langkah ini wajib dilakukan untuk mengamankan firmware asli flashdisk sebelum me
    cd C:\BadUSB
    ```
 
-### 2. Eksekusi Perintah Backup
+### 2. Modifikasi Berkas Burner (Unlocked Burner)
+
+Sebelum melakukan backup, berkas `BN07V502TAW.BIN` harus dimodifikasi terlebih dahulu pada dua offset proteksi agar chip PS2307 dapat dibaca dan ditulis.
+
+1. **Unduh aplikasi Hex Editor.** Anda membutuhkan aplikasi editor biner; yang paling umum dan gratis digunakan di Windows adalah **HxD Hex Editor** (atau **VS Code** dengan ekstensi *Hex Editor*).
+
+2. **Buka berkas di Hex Editor.** Jalankan HxD, klik menu **File > Open**, lalu pilih berkas `BN07V502TAW.BIN` mentah Anda.
+
+3. **Cari lokasi koordinat (offset).**
+   * Di dalam aplikasi Hex Editor, Anda akan melihat deretan angka biner berpasangan. Di sisi paling kiri terdapat kolom baris bernama **Offset** (alamat memori).
+   * Tekan tombol kombinasi **Ctrl + G** (Go to) pada keyboard Anda.
+   * Masukkan atau ketik alamat offset `4D85` pada kolom pencarian alamat, lalu tekan **Enter**.
+
+4. **Ubah nilainya menjadi `00`.**
+   * Kursor Anda akan otomatis melompat tepat di koordinat data untuk posisi `0x4D85` dan `0x4D86` (dua kolom hex yang berdampingan).
+   * Ketik langsung angka `00` pada baris koordinat `0x4D85` dan ketik `00` lagi pada koordinat `0x4D86`.
+   * Teks yang Anda ubah biasanya akan berubah warna (misalnya menjadi merah) sebagai penanda bahwa data biner aslinya telah ditimpa.
+
+5. **Simpan berkas.** Tekan **Ctrl + S** untuk menyimpan hasil perubahan tersebut.
+
+> [!IMPORTANT]
+> **Mengapa file hasil modifikasi ini harus sama untuk Bagian 2 dan Bagian 3?**
+>
+> Setelah disimpan, berkas `BN07V502TAW.BIN` di folder `C:\BadUSB\` berstatus **"Unlocked Burner"**, yaitu pembuka proteksi chip Phison PS2307. Pertahankan nama berkasnya, karena perintah `DumpFirmware` dan `SendFirmware` memanggilnya sebagai `/burner=BN07V502TAW.BIN`.
+>
+> * **Pada Bagian 2 (Backup):** berkas modifikasi `00` ini bertugas membypass enkripsi pabrikan agar perintah `DumpFirmware` bisa menyedot keluar isi data biner internal chip menjadi file `FirmwareAsliOriginal.bin`.
+> * **Pada Bagian 3 (Flashing):** berkas modifikasi `00` yang sama bertugas membypass gerbang keamanan *write-protection* chip agar perintah `SendFirmware` diizinkan menyuntikkan dan menimpa sistem dengan berkas kustom biner `fw.bin` yang baru.
+
+### 3. Eksekusi Perintah Backup
 
 1. **Masuk ke Boot Mode**: Jalankan perintah berikut untuk mengalihkan flashdisk ke mode aman (lampu indikator akan mati/berkedip konstan, dan huruf drive akan menghilang sementara dari Windows Explorer):
 
@@ -193,9 +221,13 @@ Proses ini mengubah arsitektur kode dasar Psychson (default seri 03) agar kompat
    packihx main.ihx > fw.hex
    makebin fw.hex fw.bin
    echo Kompilasi Berhasil Selesai!
+   pause
    ```
 
 5. Simpan dan tutup file tersebut, lalu jalankan dengan klik dua kali pada `build.bat`. File biner baru bernama `fw.bin` akan otomatis tercipta di folder tersebut.
+
+> [!TIP]
+> Perintah `pause` di baris paling bawah `build.bat` berfungsi agar jendela CMD tidak langsung menutup otomatis setelah proses selesai, sehingga Anda bisa membaca pesan error dari kompiler SDCC bila kompilasi gagal. Tekan sembarang tombol untuk menutup jendela setelah membacanya.
 
 ### Tahap 2: Penggabungan Skrip Injeksi (Payload)
 
@@ -212,6 +244,9 @@ Proses ini mengubah arsitektur kode dasar Psychson (default seri 03) agar kompat
 ### Tahap 3: Proses Flashing Utama (Pembakaran ke Chip)
 
 Pastikan posisi flashdisk masih berada dalam **Boot Mode** dari langkah pemulihan/cadangan sebelumnya.
+
+> [!IMPORTANT]
+> Gunakan berkas burner `BN07V502TAW.BIN` yang **sama** dengan yang sudah dimodifikasi pada [Bagian 2](#bagian-2) (offset `0x4D85` dan `0x4D86` diubah menjadi `00`). Berkas *Unlocked Burner* inilah yang membuka proteksi tulis agar `SendFirmware` diizinkan menimpa chip dengan `fw.bin`.
 
 1. Jalankan perintah pembakaran berikut pada CMD Administrator:
 
