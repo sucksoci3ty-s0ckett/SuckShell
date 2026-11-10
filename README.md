@@ -103,11 +103,11 @@ C:\BadUSB\
 
 `DriveCom.exe` digunakan untuk berkomunikasi dengan kontroler Phison. Untuk seri PS2251-07, diperlukan penyesuaian ukuran *payload length*.
 
-1. Buka repositori `brandonlw/Psychson` dan masuk ke direktori `DriveCom/`.
+1. Buka folder `tools/` pada repository ini, lalu masuk ke direktori `DriveCom/`.
 
 2. Buka file proyek `DriveCom.sln` atau `DriveCom.csproj` menggunakan **Visual Studio**.
 
-3. Buka file `DriveCom/DriveCom/PhisonDevice.cs` dan cari fungsi `TransferFile` atau variabel `data.Length`.
+3. Buka file `tools/DriveCom/DriveCom/PhisonDevice.cs` dan cari fungsi `TransferFile` atau variabel `data.Length`.
 
 4. Ubah baris kode berikut:
 
