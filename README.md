@@ -38,7 +38,7 @@ Dokumen ini disusun dengan merujuk pada tiga sumber utama berikut:
 | 1 | [🛠️ Prasyarat & Lingkungan Pengembangan](#prasyarat) | Perangkat lunak, compiler, dan struktur folder kerja |
 | 2 | [📂 Bagian 1: Persiapan & Kompilasi Alat Kerja](#bagian-1) | Build `DriveCom.exe` dan `EmbedPayload.exe` |
 | 3 | [💾 Bagian 2: Backup Firmware Asli (Dumping)](#bagian-2) | Modifikasi burner, Boot Mode & dumping firmware asli |
-| 4 | [⚡ Bagian 3: Kompilasi & Flashing Kustom Firmware](#bagian-3) | Patch seri 07, injeksi payload, pembakaran firmware |
+| 4 | [⚡ Bagian 3: Kompilasi & Flashing Kustom Firmware](#bagian-3) | Patch seri 07, pembuatan & injeksi payload, pembakaran firmware |
 | 5 | [🩺 Bagian 4: Pengujian Hasil Perangkat](#bagian-4) | Indikator keberhasilan mutasi perangkat |
 
 ---
@@ -65,6 +65,8 @@ Buatlah folder kerja terpusat di `C:\BadUSB\`. Pastikan file-file awal berikut s
 ```text
 C:\BadUSB\
 ├── BN07V502TAW.BIN     # (Berkas burner mentah khusus seri 07)
+├── payload.txt         # Skrip Duckyscript sumber (dibuat pada Bagian 3)
+├── duckencoder.jar     # Konverter Duckyscript -> inject.bin
 └── inject.bin          # (Berkas biner payload hasil konversi Duckyscript)
 ```
 
@@ -245,7 +247,37 @@ Proses ini mengubah arsitektur kode dasar Psychson (default seri 03) agar kompat
 > [!TIP]
 > Perintah `pause` di baris paling bawah `build.bat` berfungsi agar jendela CMD tidak langsung menutup otomatis setelah proses selesai, sehingga Anda bisa membaca pesan error dari kompiler SDCC bila kompilasi gagal. Tekan sembarang tombol untuk menutup jendela setelah membacanya.
 
-### Tahap 2: Penggabungan Skrip Injeksi (Payload)
+### Tahap 2: Membuat Payload (`inject.bin`) via CMD
+
+`inject.bin` adalah hasil konversi skrip **Duckyscript** (`.txt`) menjadi biner yang nantinya disuntikkan ke firmware pada tahap berikutnya.
+
+1. **Tulis Perintah Script (Duckyscript).** Buka **Notepad**, tulis skrip aksi otomatis yang Anda inginkan (misalnya membuka Notepad otomatis di laptop target), lalu simpan dengan nama `payload.txt` di folder `C:\BadUSB\`.
+
+   Contoh isi skrip dasar:
+
+   ```text
+   DELAY 3000
+   GUI r
+   DELAY 500
+   STRING notepad.exe
+   ENTER
+   DELAY 500
+   STRING Halo, ini adalah uji coba Phison BadUSB HID!
+   ENTER
+   ```
+
+   > [!CAUTION]
+   > Gunakan kode dengan hati-hati.
+
+2. **Jalankan Konversi dengan Duckencoder.** Pastikan Anda sudah meletakkan file pengonversi Java bernama `duckencoder.jar` di dalam folder `C:\BadUSB\`. Buka CMD Administrator, masuk ke direktori tersebut (`cd C:\BadUSB`), lalu jalankan perintah:
+
+   ```cmd
+   java -jar duckencoder.jar -i payload.txt -o inject.bin
+   ```
+
+   Setelah selesai, file `inject.bin` akan terbentuk di folder `C:\BadUSB\` dan siap digunakan pada tahap selanjutnya.
+
+### Tahap 3: Penggabungan Skrip Injeksi (Payload)
 
 1. Pindahkan file `fw.bin` yang baru saja dibuat ke folder utama `C:\BadUSB\`.
 
@@ -257,7 +289,7 @@ Proses ini mengubah arsitektur kode dasar Psychson (default seri 03) agar kompat
 
    *Sekarang file `fw.bin` telah siap sepenuhnya sebagai kustom firmware.*
 
-### Tahap 3: Proses Flashing Utama (Pembakaran ke Chip)
+### Tahap 4: Proses Flashing Utama (Pembakaran ke Chip)
 
 Pastikan posisi flashdisk masih berada dalam **Boot Mode** dari langkah pemulihan/cadangan sebelumnya.
 
