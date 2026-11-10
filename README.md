@@ -1,6 +1,17 @@
-# Panduan Studi: Kompilasi Alat & Flashing Firmware Phison PS2251-07
+<div align="center">
 
-> **Catatan Penting (Konteks Akademik):**  
+# ⚡ Panduan Studi: Kompilasi Alat & Flashing Firmware Phison PS2251-07
+
+**Kompilasi Tool • Backup Firmware • Flashing Kustom Firmware (PS2307)**
+
+[![Tools](https://img.shields.io/badge/Tools-Psychson-8250DF?logo=github&logoColor=white)](https://github.com/brandonlw/Psychson)
+[![Controller](https://img.shields.io/badge/Controller-Phison%20PS2251--07-EA4335)](https://flashboot.ru/files/file/647/)
+[![Patch](https://img.shields.io/badge/Patch-2307-00C853)](https://vivibit.net/psychson2307/)
+
+</div>
+
+> [!WARNING]
+> **Catatan Penting (Konteks Akademik):**
 >
 > Dokumentasi ini disusun murni untuk tujuan **pembelajaran, studi arsitektur hardware, dan eksperimen mandiri**, BUKAN untuk tindakan peretasan (hacking) atau aktivitas ilegal lainnya. Seluruh prosedur wajib dijalankan pada perangkat milik sendiri atau perangkat yang telah mendapatkan izin operasional penuh.
 
@@ -8,25 +19,67 @@ Panduan ini berisi langkah-langkah terstruktur untuk memodifikasi, mengompilasi,
 
 ---
 
+## 📚 Sumber Referensi
+
+Dokumen ini disusun dengan merujuk pada tiga sumber utama berikut:
+
+| 🔗 Sumber | 📌 Kegunaan |
+| :--- | :--- |
+| [**github.com/brandonlw/Psychson**](https://github.com/brandonlw/Psychson) | Gunakan **DriveCom** dan **EmbedPayload** |
+| [**flashboot.ru/files/file/647/**](https://flashboot.ru/files/file/647/) | Firmware **Phison** |
+| [**vivibit.net/psychson2307/**](https://vivibit.net/psychson2307/) | Patch **Psychson (BadUSB)** untuk **PS2251-07 (2307)** |
+
+---
+
+## 📑 Daftar Isi
+
+| # | Bagian | Ringkasan |
+| :--- | :--- | :--- |
+| 1 | [🛠️ Prasyarat & Lingkungan Pengembangan](#prasyarat) | Perangkat lunak, compiler, dan struktur folder kerja |
+| 2 | [📂 Bagian 1: Persiapan & Kompilasi Alat Kerja](#bagian-1) | Build `DriveCom.exe` dan `EmbedPayload.exe` |
+| 3 | [💾 Bagian 2: Backup Firmware Asli (Dumping)](#bagian-2) | Boot Mode & dumping firmware asli |
+| 4 | [⚡ Bagian 3: Kompilasi & Flashing Kustom Firmware](#bagian-3) | Patch seri 07, injeksi payload, pembakaran firmware |
+| 5 | [🩺 Bagian 4: Pengujian Hasil Perangkat](#bagian-4) | Indikator keberhasilan mutasi perangkat |
+
+---
+
+<a id="prasyarat"></a>
+
 ## 🛠️ Prasyarat & Lingkungan Pengembangan
 
 Sebelum memulai, pastikan perangkat lunak berikut telah terinstal dan siap digunakan di sistem Anda:
 
 ### 1. Perangkat Lunak & Compiler
 
-* **Visual Studio**: Untuk membuka dan melakukan *build* pada solusi proyek C# (`.sln`).
-* **SDCC (Small Device C Compiler)**: Wajib terinstal di direktori standar (`C:\Program Files\SDCC`) untuk mengompilasi kode C mikrokontroler 8051.
-* **Git Bash**: Digunakan untuk mengeksekusi perintah penambalan otomatis berbasis `.diff`.
-* **Java Runtime Environment (JRE)**: Diperlukan untuk menjalankan utilitas `duckencoder.jar`.
+| 🧰 Perangkat Lunak | 📋 Fungsi / Persyaratan |
+| :--- | :--- |
+| **Visual Studio**: | Untuk membuka dan melakukan *build* pada solusi proyek C# (`.sln`). |
+| **SDCC (Small Device C Compiler)**: | Wajib terinstal di direktori standar (`C:\Program Files\SDCC`) untuk mengompilasi kode C mikrokontroler 8051. |
+| **Git Bash**: | Digunakan untuk mengeksekusi perintah penambalan otomatis berbasis `.diff`. |
+| **Java Runtime Environment (JRE)**: | Diperlukan untuk menjalankan utilitas `duckencoder.jar`. |
 
 ### 2. Struktur Direktori Kerja
 
 Buatlah folder kerja terpusat di `C:\BadUSB\`. Pastikan file-file awal berikut sudah diletakkan di dalam folder tersebut sebelum eksekusi:
 
-* `BN07V502TAW.BIN` *(Berkas burner mentah khusus seri 07)*
-* `inject.bin` *(Berkas biner payload hasil konversi Duckyscript)*
+```text
+C:\BadUSB\
+├── BN07V502TAW.BIN     # (Berkas burner mentah khusus seri 07)
+└── inject.bin          # (Berkas biner payload hasil konversi Duckyscript)
+```
+
+### 3. Isi Repository
+
+| 📁 Folder | 📝 Keterangan |
+| :--- | :--- |
+| `tools/DriveCom/` | Source C# untuk `DriveCom.exe` (komunikasi dengan kontroler Phison). |
+| `tools/EmbedPayload/` | Source C# untuk `EmbedPayload.exe` (injeksi payload ke firmware dasar). |
+| `Firmware BadUSB/Psychson2307_diff_20160710/` | Paket patch seri 07: `firmware-firmware2307.diff`, `DriveCom-DriveCom2307.diff`, `serial.c`, `FWdummy.bin`. |
+| `FIrmware Backup/` | Cadangan firmware: `mpall 53mlc.rar`, `FW07V050150MICRONB95ANDHYNIXTLC.BIN`. |
 
 ---
+
+<a id="bagian-1"></a>
 
 ## 📂 Bagian 1: Persiapan & Kompilasi Alat Kerja
 
@@ -58,7 +111,8 @@ Buatlah folder kerja terpusat di `C:\BadUSB\`. Pastikan file-file awal berikut s
 
 8. Jika berhasil, ambil file `DriveCom.exe` di direktori `...\bin\Release\` dan pindahkan ke `C:\BadUSB\`.
 
-> 💡 *Jika build gagal, klik kanan proyek di Solution Explorer -> Properties -> Target Framework. Pastikan versinya sesuai dengan .NET Framework yang terpasang di komputer Anda (biasanya v4.0 atau v4.5).*
+> [!TIP]
+> *Jika build gagal, klik kanan proyek di Solution Explorer -> Properties -> Target Framework. Pastikan versinya sesuai dengan .NET Framework yang terpasang di komputer Anda (biasanya v4.0 atau v4.5).*
 
 ### 2. Build EmbedPayload.exe
 
@@ -73,6 +127,8 @@ Buatlah folder kerja terpusat di `C:\BadUSB\`. Pastikan file-file awal berikut s
 4. Salin file `EmbedPayload.exe` dari folder `bin/Release/` ke folder utama `C:\BadUSB\`.
 
 ---
+
+<a id="bagian-2"></a>
 
 ## 💾 Bagian 2: Backup Firmware Asli (Dumping)
 
@@ -106,9 +162,12 @@ Langkah ini wajib dilakukan untuk mengamankan firmware asli flashdisk sebelum me
 
 3. **Verifikasi**: Pastikan file `FirmwareAsliOriginal.bin` telah terbuat di `C:\BadUSB\` dan ukurannya tidak kosong (bukan 0 KB). Simpan file ini di tempat aman sebagai cadangan pemulihan.
 
-DriveE → Disesuaikan
+> [!NOTE]
+> DriveE → Disesuaikan
 
 ---
+
+<a id="bagian-3"></a>
 
 ## ⚡ Bagian 3: Kompilasi & Flashing Kustom Firmware
 
@@ -166,6 +225,8 @@ Pastikan posisi flashdisk masih berada dalam **Boot Mode** dari langkah pemuliha
 
 ---
 
+<a id="bagian-4"></a>
+
 ## 🩺 Bagian 4: Pengujian Hasil Perangkat
 
 1. Setelah proses flashing dinyatakan sukses oleh program, cabut flashdisk dari port USB.
@@ -173,6 +234,15 @@ Pastikan posisi flashdisk masih berada dalam **Boot Mode** dari langkah pemuliha
 2. Tancapkan kembali flashdisk tersebut untuk menguji mutasi perangkat.
 
 3. **Indikator Keberhasilan Mutasi:**
+
    * Flashdisk **tidak akan memunculkan drive penyimpanan lagi** di Windows Explorer.
    * Sistem operasi Windows akan mendeteksinya secara otomatis sebagai perangkat masukan **Keyboard Eksternal (HID / Human Interface Device)**.
    * Perangkat akan langsung mengeksekusi otomatis seluruh rangkaian tugas pengetikan (*payload*) yang telah dirancang di dalam file biner sebelumnya.
+
+---
+
+<div align="center">
+
+**✦ Dokumen akademik — untuk pembelajaran, studi arsitektur hardware, dan eksperimen mandiri. ✦**
+
+</div>
