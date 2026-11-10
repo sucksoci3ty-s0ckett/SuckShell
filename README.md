@@ -70,12 +70,28 @@ C:\BadUSB\
 
 ### 3. Isi Repository
 
-| 📁 Folder | 📝 Keterangan |
-| :--- | :--- |
-| `tools/DriveCom/` | Source C# untuk `DriveCom.exe` (komunikasi dengan kontroler Phison). |
-| `tools/EmbedPayload/` | Source C# untuk `EmbedPayload.exe` (injeksi payload ke firmware dasar). |
-| `Firmware BadUSB/Psychson2307_diff_20160710/` | Paket patch seri 07: `firmware-firmware2307.diff`, `DriveCom-DriveCom2307.diff`, `serial.c`, `FWdummy.bin`. |
-| `FIrmware Backup/` | Cadangan firmware: `mpall 53mlc.rar`, `FW07V050150MICRONB95ANDHYNIXTLC.BIN`. |
+```text
+.
+├── README.md
+├── tools/                     # Bagian 1 — alat kompilasi
+│   ├── DriveCom/              # Source C# DriveCom.exe (komunikasi dengan chip)
+│   └── EmbedPayload/          # Source C# EmbedPayload.exe (injeksi payload)
+├── firmware-patch-2307/       # Bagian 3 — paket patch untuk PS2251-07 (2307)
+│   ├── firmware-firmware2307.diff
+│   ├── DriveCom-DriveCom2307.diff
+│   ├── firmware/serial.c
+│   ├── templates/FWdummy.bin
+│   └── README.ja.txt
+├── firmware-source/           # Bagian 3 — kode C firmware Psychson
+│   ├── build.bat              # Skrip build SDCC
+│   └── *.c / *.h              # main.c, usb.c, control.c, scsi.c, timers.c, defs.h, ...
+└── firmware-backup/           # Bagian 2 — cadangan firmware asli
+    ├── FW07V050150MICRONB95ANDHYNIXTLC.BIN
+    └── mpall 53mlc.rar
+```
+
+> [!NOTE]
+> `build.bat` di `firmware-source/` memakai path relatif ala Psychson (`..\templates\FWdummy.bin` dan `..\tools\sfk`). Bila ingin menjalankannya langsung dari repository ini, siapkan folder `templates/` (berisi `FWdummy.bin` dari `firmware-patch-2307/templates/`) dan `tools/` (berisi `sfk`) **sejajar** dengan `firmware-source/`.
 
 ---
 
@@ -205,7 +221,7 @@ Proses ini mengubah arsitektur kode dasar Psychson (default seri 03) agar kompat
 
 1. Buka direktori `Psychson/firmware/`.
 
-2. Salin file `serial.c` dan file patch `firmware-firmware2307.diff` dari folder proyek eksternal Anda, lalu tempel (*paste*) ke dalam `Psychson/firmware/`.
+2. Salin file `serial.c` dan file patch `firmware-firmware2307.diff` dari folder `firmware-patch-2307/` pada repository ini, lalu tempel (*paste*) ke dalam `Psychson/firmware/`.
 
 3. Klik kanan di area kosong folder tersebut, pilih **Git Bash Here**, lalu jalankan perintah penambalan kode berikut:
 
